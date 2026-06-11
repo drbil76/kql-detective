@@ -1,0 +1,711 @@
+`git <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KQL Detective</title>
+  <style>
+    :root {
+      --bg: #071015;
+      --panel: rgba(10, 17, 27, 0.82);
+      --panel-strong: rgba(10, 17, 27, 0.96);
+      --line: rgba(129, 214, 255, 0.14);
+      --text: #eef5ff;
+      --muted: #8ea7bd;
+      --accent: #7ef0c7;
+      --accent-2: #7db9ff;
+      --danger: #ff6e7f;
+      --success: #66f0a5;
+      --warn: #ffd166;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Bahnschrift", "Segoe UI Variable", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top, rgba(125, 185, 255, 0.12), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(126, 240, 199, 0.14), transparent 26%),
+        linear-gradient(160deg, #071015 0%, #0d1723 50%, #0f1827 100%);
+      min-height: 100vh;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      min-height: 100vh;
+    }
+
+    .sidebar, .main {
+      padding: 24px;
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--line);
+      background: rgba(6, 12, 21, 0.7);
+      display: grid;
+      gap: 18px;
+      align-content: start;
+    }
+
+    .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    h1 {
+      font-size: 40px;
+      line-height: 0.98;
+      margin-top: 8px;
+    }
+
+    .subtext {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .badge-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--line);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .mission-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .mission-card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(255,255,255,0.03);
+      cursor: pointer;
+      transition: transform 120ms ease, border-color 120ms ease, opacity 120ms ease;
+    }
+
+    .mission-card:hover, .mission-card.active {
+      transform: translateX(2px);
+      border-color: rgba(126, 240, 199, 0.5);
+    }
+
+    .mission-card.locked {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .mission-card strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .main {
+      display: grid;
+      gap: 18px;
+    }
+
+    .hero, .panel {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 24px;
+      backdrop-filter: blur(14px);
+    }
+
+    .hero {
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 1.2fr 340px;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .hero h2 {
+      font-size: 30px;
+      margin: 8px 0 10px;
+    }
+
+    .scene-card {
+      min-height: 210px;
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      background: linear-gradient(135deg, rgba(125,185,255,0.08), rgba(126,240,199,0.08));
+      position: relative;
+      overflow: hidden;
+    }
+
+    .scene-card svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.25fr 0.9fr;
+      gap: 18px;
+    }
+
+    .panel {
+      padding: 18px;
+    }
+
+    .panel h3 {
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+
+    .editor-shell {
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(125,185,255,0.22);
+      background: #0b1320;
+    }
+
+    #editor {
+      height: 380px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #051019;
+    }
+
+    button.secondary {
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .feedback {
+      min-height: 90px;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.03);
+      transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+    }
+
+    .feedback.correct {
+      border-color: rgba(102, 240, 165, 0.5);
+      background: rgba(102, 240, 165, 0.08);
+      animation: pulseGood 420ms ease;
+    }
+
+    .feedback.incorrect {
+      border-color: rgba(255, 110, 127, 0.5);
+      background: rgba(255, 110, 127, 0.08);
+      animation: shakeBad 420ms ease;
+    }
+
+    .result-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 14px;
+      font-size: 14px;
+    }
+
+    .result-table th,
+    .result-table td {
+      padding: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      text-align: left;
+    }
+
+    .concept-list, .story-list {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .stat {
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .stat strong {
+      font-size: 26px;
+    }
+
+    .tiny {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @keyframes shakeBad {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-3px); }
+    }
+
+    @keyframes pulseGood {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.01); }
+      100% { transform: scale(1); }
+    }
+
+    @media (max-width: 1160px) {
+      .shell, .hero, .grid {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div>
+        <div class="eyebrow">Interactive Blue Team Game</div>
+        <h1>KQL Detective</h1>
+      </div>
+      <p class="subtext" id="sidebarBriefing">Loading case briefing...</p>
+      <div class="badge-row">
+        <span class="badge" id="progressBadge">0 / 0 solved</span>
+        <span class="badge" id="scoreBadge">Score 0</span>
+      </div>
+      <div class="mission-list" id="missionList"></div>
+      <p class="tiny">Goal: solve the incident step by step by writing KQL against Defender-like telemetry.</p>
+    </aside>
+
+    <main class="main">
+      <section class="hero">
+        <div>
+          <div class="eyebrow" id="heroEyebrow">Mission</div>
+          <h2 id="heroTitle">Loading mission...</h2>
+          <p class="subtext" id="heroNarrative"></p>
+          <div class="stats">
+            <div class="stat">
+              <span>Mission</span>
+              <strong id="missionIndex">0</strong>
+            </div>
+            <div class="stat">
+              <span>Unlocked</span>
+              <strong id="unlockedCount">0</strong>
+            </div>
+            <div class="stat">
+              <span>Attempts</span>
+              <strong id="attemptCount">0</strong>
+            </div>
+          </div>
+        </div>
+        <div class="scene-card" id="sceneCard"></div>
+      </section>
+
+      <section class="grid">
+        <section class="panel">
+          <h3>Query Console</h3>
+          <div class="editor-shell">
+            <div id="editor"></div>
+          </div>
+          <div class="actions">
+            <button id="submitButton">Run Query</button>
+            <button class="secondary" id="resetQueryButton">Reset Query</button>
+            <span class="tiny">Autocomplete: `Ctrl+Space`</span>
+          </div>
+          <div class="feedback" id="feedbackBox">
+            <strong id="feedbackTitle">Awaiting query...</strong>
+            <p class="subtext" id="feedbackText">Write the KQL needed to progress the investigation.</p>
+          </div>
+          <div id="resultsMount"></div>
+        </section>
+
+        <section class="panel">
+          <h3>Mission Brief</h3>
+          <p class="subtext" id="missionGoal"></p>
+          <h3 style="margin-top:18px;">Required Concepts</h3>
+          <ul class="concept-list" id="conceptList"></ul>
+          <h3 style="margin-top:18px;">Story Stakes</h3>
+          <ul class="story-list">
+            <li id="storyBriefing"></li>
+            <li id="storyStakes"></li>
+          </ul>
+          <h3 style="margin-top:18px;">Hint</h3>
+          <p class="subtext" id="hintText">Hints unlock after a failed attempt.</p>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js"></script>
+  <script>
+    const state = {
+      game: null,
+      currentMissionIndex: 0,
+      solved: [],
+      attempts: {},
+      score: 0,
+      editor: null,
+    };
+
+    const dom = {
+      missionList: document.getElementById("missionList"),
+      sidebarBriefing: document.getElementById("sidebarBriefing"),
+      progressBadge: document.getElementById("progressBadge"),
+      scoreBadge: document.getElementById("scoreBadge"),
+      heroEyebrow: document.getElementById("heroEyebrow"),
+      heroTitle: document.getElementById("heroTitle"),
+      heroNarrative: document.getElementById("heroNarrative"),
+      missionIndex: document.getElementById("missionIndex"),
+      unlockedCount: document.getElementById("unlockedCount"),
+      attemptCount: document.getElementById("attemptCount"),
+      sceneCard: document.getElementById("sceneCard"),
+      missionGoal: document.getElementById("missionGoal"),
+      conceptList: document.getElementById("conceptList"),
+      storyBriefing: document.getElementById("storyBriefing"),
+      storyStakes: document.getElementById("storyStakes"),
+      hintText: document.getElementById("hintText"),
+      feedbackBox: document.getElementById("feedbackBox"),
+      feedbackTitle: document.getElementById("feedbackTitle"),
+      feedbackText: document.getElementById("feedbackText"),
+      resultsMount: document.getElementById("resultsMount"),
+      submitButton: document.getElementById("submitButton"),
+      resetQueryButton: document.getElementById("resetQueryButton"),
+    };
+
+    async function api(path, options = {}) {
+      const response = await fetch(path, {
+        headers: { "Content-Type": "application/json" },
+        ...options,
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.detail || `HTTP ${response.status}`);
+      }
+      return response.json();
+    }
+
+    function saveProgress() {
+      localStorage.setItem("kql-detective-progress", JSON.stringify({
+        solved: state.solved,
+        currentMissionIndex: state.currentMissionIndex,
+        attempts: state.attempts,
+        score: state.score,
+      }));
+    }
+
+    function loadProgress() {
+      const raw = localStorage.getItem("kql-detective-progress");
+      if (!raw) return;
+      try {
+        const parsed = JSON.parse(raw);
+        state.solved = parsed.solved || [];
+        state.currentMissionIndex = parsed.currentMissionIndex || 0;
+        state.attempts = parsed.attempts || {};
+        state.score = parsed.score || 0;
+      } catch {
+        localStorage.removeItem("kql-detective-progress");
+      }
+    }
+
+    function currentMission() {
+      return state.game.missions[state.currentMissionIndex];
+    }
+
+    function maxUnlockedIndex() {
+      return Math.min(state.solved.length, state.game.missions.length - 1);
+    }
+
+    function isUnlocked(index) {
+      return index <= state.solved.length;
+    }
+
+    function renderSidebar() {
+      dom.sidebarBriefing.textContent = state.game.briefing;
+      dom.progressBadge.textContent = `${state.solved.length} / ${state.game.missions.length} solved`;
+      dom.scoreBadge.textContent = `Score ${state.score}`;
+      dom.missionList.innerHTML = "";
+
+      state.game.missions.forEach((mission, index) => {
+        const card = document.createElement("article");
+        const unlocked = isUnlocked(index);
+        card.className = `mission-card ${state.currentMissionIndex === index ? "active" : ""} ${unlocked ? "" : "locked"}`;
+        card.innerHTML = `
+          <strong>${index + 1}. ${mission.title}</strong>
+          <div class="subtext">${mission.goal}</div>
+        `;
+        if (unlocked) {
+          card.addEventListener("click", () => {
+            state.currentMissionIndex = index;
+            updateMissionView(true);
+          });
+        }
+        dom.missionList.appendChild(card);
+      });
+    }
+
+    function renderScene(kind) {
+      const art = {
+        mail: `
+          <svg viewBox="0 0 320 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="30" y="42" width="260" height="148" rx="18" stroke="rgba(125,185,255,.55)" fill="rgba(125,185,255,.06)"/>
+            <path d="M46 62L160 132L274 62" stroke="rgba(126,240,199,.9)" stroke-width="4"/>
+            <circle cx="250" cy="76" r="22" fill="rgba(255,110,127,.18)" stroke="rgba(255,110,127,.75)" />
+            <path d="M241 76H259" stroke="rgba(255,110,127,.9)" stroke-width="4" stroke-linecap="round"/>
+          </svg>`,
+        document: `
+          <svg viewBox="0 0 320 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="76" y="28" width="170" height="170" rx="18" stroke="rgba(125,185,255,.55)" fill="rgba(255,255,255,.04)"/>
+            <path d="M116 82H210M116 108H210M116 134H186" stroke="rgba(126,240,199,.85)" stroke-width="6" stroke-linecap="round"/>
+            <path d="M222 28V76H246" stroke="rgba(125,185,255,.7)" stroke-width="4"/>
+          </svg>`,
+        network: `
+          <svg viewBox="0 0 320 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="72" cy="110" r="26" stroke="rgba(125,185,255,.7)" fill="rgba(125,185,255,.08)"/>
+            <circle cx="160" cy="60" r="22" stroke="rgba(126,240,199,.8)" fill="rgba(126,240,199,.08)"/>
+            <circle cx="250" cy="124" r="28" stroke="rgba(255,110,127,.8)" fill="rgba(255,110,127,.08)"/>
+            <path d="M96 97L140 73M181 73L224 106" stroke="rgba(255,255,255,.7)" stroke-width="4"/>
+          </svg>`,
+        registry: `
+          <svg viewBox="0 0 320 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="78" y="52" width="54" height="54" fill="rgba(125,185,255,.25)" stroke="rgba(125,185,255,.8)"/>
+            <rect x="142" y="52" width="54" height="54" fill="rgba(126,240,199,.22)" stroke="rgba(126,240,199,.8)"/>
+            <rect x="110" y="116" width="54" height="54" fill="rgba(255,209,102,.2)" stroke="rgba(255,209,102,.85)"/>
+            <rect x="174" y="116" width="54" height="54" fill="rgba(255,110,127,.18)" stroke="rgba(255,110,127,.8)"/>
+          </svg>`,
+        user: `
+          <svg viewBox="0 0 320 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="160" cy="84" r="34" stroke="rgba(126,240,199,.85)" fill="rgba(126,240,199,.08)"/>
+            <path d="M96 182C108 148 128 132 160 132C192 132 212 148 224 182" stroke="rgba(125,185,255,.9)" stroke-width="8" stroke-linecap="round"/>
+          </svg>`,
+      };
+      dom.sceneCard.innerHTML = art[kind] || "";
+    }
+
+    function updateMissionView(resetEditor = false) {
+      const mission = currentMission();
+      renderSidebar();
+      dom.heroEyebrow.textContent = state.game.title;
+      dom.heroTitle.textContent = mission.title;
+      dom.heroNarrative.textContent = mission.narrative;
+      dom.missionIndex.textContent = `${state.currentMissionIndex + 1}`;
+      dom.unlockedCount.textContent = `${Math.min(state.solved.length + 1, state.game.missions.length)}`;
+      dom.attemptCount.textContent = `${state.attempts[mission.id] || 0}`;
+      dom.missionGoal.textContent = mission.goal;
+      dom.storyBriefing.textContent = state.game.briefing;
+      dom.storyStakes.textContent = state.game.stakes;
+      dom.hintText.textContent = "Hints unlock after a failed attempt.";
+      dom.conceptList.innerHTML = mission.concepts.map((item) => `<li>${item}</li>`).join("");
+      renderScene(mission.illustration);
+      dom.feedbackBox.className = "feedback";
+      dom.feedbackTitle.textContent = "Awaiting query...";
+      dom.feedbackText.textContent = "Write the KQL needed to progress the investigation.";
+      dom.resultsMount.innerHTML = "";
+      if (resetEditor && state.editor) {
+        state.editor.setValue(mission.starting_query);
+      }
+    }
+
+    function renderResults(rows) {
+      if (!rows.length) {
+        dom.resultsMount.innerHTML = "";
+        return;
+      }
+      const headers = Object.keys(rows[0]);
+      const thead = headers.map((key) => `<th>${escapeHtml(key)}</th>`).join("");
+      const tbody = rows.map((row) => `<tr>${headers.map((key) => `<td>${escapeHtml(String(row[key]))}</td>`).join("")}</tr>`).join("");
+      dom.resultsMount.innerHTML = `<table class="result-table"><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table>`;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    async function submitCurrentMission() {
+      const mission = currentMission();
+      const query = state.editor.getValue();
+      state.attempts[mission.id] = (state.attempts[mission.id] || 0) + 1;
+
+      const result = await api("/api/submit", {
+        method: "POST",
+        body: JSON.stringify({
+          mission_id: mission.id,
+          query,
+        }),
+      });
+
+      if (result.status === "correct") {
+        if (!state.solved.includes(mission.id)) {
+          state.solved.push(mission.id);
+          state.score += result.score_delta || 100;
+        }
+        dom.feedbackBox.className = "feedback correct";
+        dom.feedbackTitle.textContent = "Correct query";
+        dom.feedbackText.textContent = `${result.message} Answer: ${result.answer}`;
+        renderResults(result.result_rows || []);
+        if (state.currentMissionIndex < state.game.missions.length - 1) {
+          state.currentMissionIndex += 1;
+          setTimeout(() => updateMissionView(true), 850);
+        } else {
+          dom.feedbackText.textContent += " Case closed. You resolved the full scenario.";
+        }
+      } else {
+        dom.feedbackBox.className = "feedback incorrect";
+        dom.feedbackTitle.textContent = "Not enough signal";
+        dom.feedbackText.textContent = result.message;
+        dom.hintText.textContent = result.hint || "Try narrowing the table and columns.";
+        renderResults([]);
+      }
+
+      saveProgress();
+      renderSidebar();
+      dom.attemptCount.textContent = `${state.attempts[mission.id] || 0}`;
+      dom.scoreBadge.textContent = `Score ${state.score}`;
+      dom.progressBadge.textContent = `${state.solved.length} / ${state.game.missions.length} solved`;
+    }
+
+    function configureMonaco(editorData) {
+      require.config({ paths: { vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs" } });
+      require(["vs/editor/editor.main"], () => {
+        monaco.languages.register({ id: "kql" });
+        monaco.languages.setMonarchTokensProvider("kql", {
+          tokenizer: {
+            root: [
+              [/\b(DeviceProcessEvents|DeviceNetworkEvents|DeviceRegistryEvents|DeviceLogonEvents)\b/, "type.identifier"],
+              [/\b(where|project|distinct|summarize|count|order|by|take|top|contains|has|startswith|endswith|and|or|not|join)\b/, "keyword"],
+              [/"[^"]*"/, "string"],
+              [/\d+/, "number"],
+              [/[|]/, "delimiter"],
+              [/[A-Za-z_][\w.]*/, "identifier"],
+            ]
+          }
+        });
+
+        monaco.editor.defineTheme("kql-detective", {
+          base: "vs-dark",
+          inherit: true,
+          rules: [
+            { token: "keyword", foreground: "7EF0C7", fontStyle: "bold" },
+            { token: "type.identifier", foreground: "7DB9FF", fontStyle: "bold" },
+            { token: "string", foreground: "FFD166" },
+            { token: "identifier", foreground: "EEF5FF" },
+          ],
+          colors: {
+            "editor.background": "#0B1320",
+            "editorLineNumber.foreground": "#49627D",
+            "editorCursor.foreground": "#7EF0C7",
+          }
+        });
+
+        monaco.languages.registerCompletionItemProvider("kql", {
+          triggerCharacters: ["|", " ", "."],
+          provideCompletionItems: () => {
+            const suggestions = [];
+            editorData.keywords.forEach((keyword) => {
+              suggestions.push({
+                label: keyword,
+                kind: monaco.languages.CompletionItemKind.Keyword,
+                insertText: keyword,
+              });
+            });
+            Object.entries(editorData.tables).forEach(([table, columns]) => {
+              suggestions.push({
+                label: table,
+                kind: monaco.languages.CompletionItemKind.Class,
+                insertText: table,
+              });
+              columns.forEach((column) => {
+                suggestions.push({
+                  label: column,
+                  kind: monaco.languages.CompletionItemKind.Field,
+                  insertText: column,
+                });
+              });
+            });
+            return { suggestions };
+          }
+        });
+
+        state.editor = monaco.editor.create(document.getElementById("editor"), {
+          value: currentMission().starting_query,
+          language: "kql",
+          theme: "kql-detective",
+          automaticLayout: true,
+          minimap: { enabled: false },
+          fontSize: 14,
+          lineNumbersMinChars: 3,
+          roundedSelection: true,
+          scrollBeyondLastLine: false,
+          suggestOnTriggerCharacters: true,
+        });
+      });
+    }
+
+    async function boot() {
+      state.game = await api("/api/game");
+      loadProgress();
+      if (state.currentMissionIndex > maxUnlockedIndex()) {
+        state.currentMissionIndex = maxUnlockedIndex();
+      }
+      configureMonaco(state.game.editor);
+      updateMissionView(false);
+      renderSidebar();
+    }
+
+    document.getElementById("submitButton").addEventListener("click", submitCurrentMission);
+    document.getElementById("resetQueryButton").addEventListener("click", () => {
+      if (state.editor) {
+        state.editor.setValue(currentMission().starting_query);
+      }
+    });
+
+    boot().catch((error) => {
+      dom.sidebarBriefing.textContent = `Failed to load game: ${error.message}`;
+    });
+  </script>
+</body>
+</html>

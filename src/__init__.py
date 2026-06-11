@@ -1,0 +1,3 @@
+"""
+KQL Detective package.
+"""

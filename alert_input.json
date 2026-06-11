@@ -1,8 +1,0 @@
-﻿{
-  "alert_name": "Suspicious File Execution",
-  "source": "EDR",
-  "host": "host-23.corp.example.com",
-  "user": "jdoe",
-  "destination_ip": "8.8.8.8",
-  "file_hash": "44d88612fea8a8f36de82e1278abb02f"
-}

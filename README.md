@@ -1,37 +1,51 @@
-﻿# soc-alert-automation
+# KQL Detective
 
-Automation of SOC alerts triage by enriching indicators of compromise (IOCs), computing a reputation-driven severity, and producing a SOC-ready investigation report.
+An interactive blue-team training game where the player solves a realistic incident by writing KQL queries step by step.
 
-## Features
-- IP enrichment via AbuseIPDB (country, ISP, abuse confidence score)
-- File hash enrichment via VirusTotal (malicious, suspicious, undetected counts)
-- Deterministic severity calculation (Low/Medium/High) combining IP and hash reputation
-- Markdown investigation report with alert context, enrichment details, and final assessment
-- Environment-based API keys, request timeouts, and defensive response handling
+## Concept
 
-## Why It Matters for SOC
-Reduces analyst time on repetitive triage, improves consistency in severity assignments, and produces standardized reports that can be attached to cases or tickets.
+The player is a junior SOC analyst investigating a malicious attachment chain. Each mission requires a KQL query to uncover the next pivot:
+- identify the compromised device
+- trace the parent process
+- pivot to network activity
+- confirm persistence
+- scope the affected user
 
-## Installation
-1. Ensure Python 3.10+ is installed
-2. Clone or download this repository
-3. Create and activate a virtual environment
-4. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-5. Copy `.env.example` to `.env` and populate your API keys
+Progress only unlocks when the submitted query matches the mission logic.
 
-## Usage
-1. Edit `alert_input.json` with the alert details to triage.
-2. Run:
-   ```bash
-   python -m src.main
-   ```
-3. The enriched Markdown report is written to `output/investigation_report.md`
+## Current Features
 
-## Output
-- `output/investigation_report.md` contains:
-  - Alert metadata and context
-  - IP and hash enrichment summaries
-  - Severity justification and recommended next actions
+- story-driven investigation with 5 sequential missions
+- Defender-like KQL tables and fields
+- browser-based query editor powered by Monaco
+- KQL-style syntax highlighting and autocomplete for tables, columns, and common operators
+- success and failure feedback with animated state changes
+- result preview for successful queries
+- local progress persistence through browser storage
+- FastAPI backend for game state and answer validation
+
+## Run
+
+```bash
+pip install -r requirements.txt
+uvicorn src.app:app --reload
+```
+
+Open `http://127.0.0.1:8000`.
+
+## Notes
+
+This MVP does not execute real KQL against Microsoft Defender. It simulates Defender-style telemetry and validates the query structure required for each mission.
+
+That is deliberate:
+- the product is usable without Microsoft licenses
+- the gameplay is controlled and predictable
+- the scope stays realistic for a portfolio project
+
+## Next Steps
+
+- stronger parser-based validation instead of token checks
+- multiple scenarios and difficulty levels
+- scoring rubric and post-mission explanations
+- optional Azure Data Explorer integration for real KQL execution
+- later support for SPL and other blue-team query languages
